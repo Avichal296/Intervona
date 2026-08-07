@@ -20,3 +20,4 @@ app.post('/api/v1/interview', async (req: any ,res: any ) =>{
         github: result
      })
 })
+app.listen(3000);
