@@ -1,8 +1,8 @@
 import { Form } from './Form'
 import './App.css'
 import { useState } from 'react'
-import {Interview} from '../interview'
-import {Result} from '../result'
+import {Interview} from './interview'
+import {Result} from './result'
 
 
 function App() {
@@ -11,7 +11,7 @@ function App() {
     <>
       <div>
         {page === 'form' && <Form />}
-        {page === 'Interview' && <i=Interview />}
+        {page === 'Interview' && <Interview />}
         {page === 'Result' && <Result />}
       </div>
       
@@ -19,4 +19,4 @@ function App() {
   )
 }
 
-export default App
+export default App;

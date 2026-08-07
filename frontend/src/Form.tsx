@@ -1,12 +1,14 @@
-import { useState } from 'react'
+import { useState } from 'react';
+import axios from 'axios';
+import { BackendUrl } from './lib /config';
 import './App.css'
 export function Form(){
   const [GithubUrl, setGithubUrl] = useState('');
-    function handleSubmit(){
+    async function handleSubmit(){
         if(GithubUrl.trim() === ''){
              return  alert("Github URL is required");       
         }
-        axios.post(`${backendUrl}/api/v1/interview`,{
+         await axios.post(`${BackendUrl}/api/v1/interview`,{
           GithubUrl : GithubUrl
         })
     }
