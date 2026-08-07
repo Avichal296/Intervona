@@ -6,6 +6,9 @@ export function Form(){
         if(GithubUrl.trim() === ''){
              return  alert("Github URL is required");       
         }
+        axios.post(`${backendUrl}/api/v1/interview`,{
+          GithubUrl : GithubUrl
+        })
     }
     return (
         <div className="h-screen w-screen flex items-center justify-center">
