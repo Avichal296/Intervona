@@ -17,25 +17,25 @@ model  Interview{
   id                String      @id @default(uuid())
   githubMetaData    Json
   status            statusinterview
-  score             int 
-  conversation      Conversation        
+  score             Int          @default(0)
+  conversation      Conversation[]       
   
  }
   model Conversation{
-     id       String            @id @default(uuid)
+     id       String            @id @default(uuid())
      message  String
      type     Messagetype 
-     InterviewId  String
-     Interview     Interview    @relation(fields: [InterviewId] ,references: [id])
+     InterviewId  String        @unique
+     interview     Interview    @relation(fields: [InterviewId] ,references: [id])
   }
 
-  model Messagetype{
-     user,
-     assistant
+enum  Messagetype{
+     USER
+     ASSISTANT
   }
 
- model  statusinterview{
-   pre,
-   progress,
-   post
+enum statusinterview{
+   PRE    
+   PROGRESS
+   POST 
  }
