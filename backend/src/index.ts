@@ -2,7 +2,7 @@ import express from 'express';
 import axios from 'axios';
 import { Github } from "../scrapper/Github.js";
 import { ParseInterview } from '../type.js';
-import { json, string } from 'zod';
+import { any, json, string } from 'zod';
 import { Prisma } from '../db.js'
 import cors from 'cors';
 import { id } from 'zod/v4/locales';
@@ -21,7 +21,7 @@ app.post('/api/v1/interview', async (req: any ,res: any ) =>{
     
     const  interview = await Prisma.interview.create({
          data: {
-            status: id,
+            status: "pre",
             githubmetadata : JSON.stringify(GithubUsername)   
         
       }
@@ -30,7 +30,7 @@ app.post('/api/v1/interview', async (req: any ,res: any ) =>{
     
      const result = await Github(GithubUsername);
      res.json( {
-        github: result
+        id: interview.id
      })
 })
 app.listen(3001);
