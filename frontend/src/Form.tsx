@@ -1,16 +1,22 @@
 import { useState } from 'react';
 import axios from 'axios';
 import { BackendUrl } from './lib /config';
+
+
 import './App.css'
+import { useNavigate} from 'react-router';
 export function Form(){
   const [GithubUrl, setGithubUrl] = useState('');
+  const navigate = useNavigate();
+
     async function handleSubmit(){
         if(GithubUrl.trim() === ''){
              return  alert("Github URL is required");       
         }
-         await axios.post(`${BackendUrl}/api/v1/interview`,{
+        const Response =  await axios.post(`${BackendUrl}/api/v1/interview`,{
           GithubUrl : GithubUrl
         })
+   navigate(`/interview/${Response.data.id}`)
     }
     return (
         <div className="h-screen w-screen flex items-center justify-center">

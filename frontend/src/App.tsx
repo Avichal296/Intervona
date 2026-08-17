@@ -3,17 +3,35 @@ import './App.css'
 import { useState } from 'react'
 import {Interview} from './interview'
 import {Result} from './result'
+import { BrowserRouter, Routes, Route } from "react-router-dom";
+
 
 
 function App() {
- const [page, setpage] = useState<'form' | 'Interview' | 'Result'> ('form');
+//  const [page, setpage] = useState<'form' | 'Interview' | 'Result'> ('form');
+
+
   return (
     <>
-      <div>
+    <BrowserRouter>
+    <Routes>
+      <Route path = "/form:id" element={<Form/>} />
+      <Route path = "/Interview:id" element= {<Interview/>}/>
+      <Route path = "/Result:id" element={<Result/>}/>
+
+
+     </Routes>
+    
+    
+    
+    </BrowserRouter>
+     
+
+      {/* <div>
         {page === 'form' && <Form />}
         {page === 'Interview' && <Interview />}
         {page === 'Result' && <Result />}
-      </div>
+      </div> */}
       
     </>
   )
