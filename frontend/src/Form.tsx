@@ -4,7 +4,7 @@ import { BackendUrl } from './lib /config';
 
 
 import './App.css'
-import { useNavigate} from 'react-router';
+import { useNavigate} from 'react-router-dom';
 export function Form(){
   const [GithubUrl, setGithubUrl] = useState('');
   const navigate = useNavigate();
@@ -13,8 +13,8 @@ export function Form(){
         if(GithubUrl.trim() === ''){
              return  alert("Github URL is required");       
         }
-        const Response =  await axios.post(`${BackendUrl}/api/v1/interview`,{
-          GithubUrl : GithubUrl
+        const Response = await axios.post(`${BackendUrl}/api/v1/interview`,{
+          github : GithubUrl
         })
    navigate(`/interview/${Response.data.id}`)
     }
@@ -31,7 +31,7 @@ export function Form(){
             placeholder="Github URL"
           />
       
-          <button  onSubmit={handleSubmit}   className="bg-blue-500 text-white rounded-sm p-4 hover:bg-blue-600">
+          <button  onClick={handleSubmit}   className="bg-blue-500 text-white rounded-sm p-4 hover:bg-blue-600">
             Submit
           </button>
         </div>

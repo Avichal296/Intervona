@@ -23,7 +23,11 @@ export const Interview = () => {
       const setupMessage = {
         setup: {
           model: `models/${MODEL_NAME}`,
-          responseModalities: ["AUDIO"],
+      
+          generationConfig: {
+            responseModalities: ["AUDIO"],
+          },
+      
           systemInstruction: {
             parts: [
               {
@@ -39,22 +43,51 @@ export const Interview = () => {
       console.log("Configuration sent ✅");
 
       // 3. For now, test with TEXT only
-      const textMessage = {
-        realtimeInput: {
-          text: "Start the interview and ask me the first backend question.",
-        },
-      };
+    //   const textMessage = {
+    //     realtimeInput: {
+    //       text: "Start the interview and ask me the first backend question.",
+    //     },
+    //   };
 
-      websocket.send(JSON.stringify(textMessage));
+    //   websocket.send(JSON.stringify(textMessage));
 
-      console.log("Text sent ✅");
+    //   console.log("Text sent ✅");
     };
 
     // 4. Receive everything from Gemini
-    websocket.onmessage = (event) => {
-      const response = JSON.parse(event.data);
+    websocket.onmessage = async  (event) => {
+        let data = event.data;
 
+        // Browser mein message Blob aa sakta hai
+        if (data instanceof Blob) {
+          data = await data.text();
+        }
+    
+        const response = JSON.parse(data);
+    
       console.log("Gemini response:", response);
+      console.log("RAW GEMINI MESSAGE:", event.data);
+
+      try {
+        // const response = JSON.parse(event.data);
+        console.log("PARSED GEMINI RESPONSE:", response);
+        if (response.setupComplete) {
+            console.log("Gemini setup complete ✅");
+      
+            const textMessage = {
+              realtimeInput: {
+                text: "Start the interview and ask me the first backend question.",
+              },
+            };
+      
+            websocket.send(JSON.stringify(textMessage));
+      
+            console.log("Text sent ✅");
+          }
+      
+      } catch (error) {
+        console.error("Failed to parse:", error);
+      }
 
       if (response.serverContent) {
         const serverContent = response.serverContent;
@@ -95,8 +128,13 @@ export const Interview = () => {
       console.error("WebSocket Error ❌", error);
     };
 
-    websocket.onclose = () => {
-      console.log("WebSocket Closed");
+    websocket.onclose = (event) => {
+        
+            console.log("WebSocket Closed");
+            console.log("Code:", event.code);
+            console.log("Reason:", event.reason);
+            console.log("Was clean:", event.wasClean);
+          
     };
 
     // Cleanup when Interview component unmounts
@@ -108,8 +146,8 @@ export const Interview = () => {
   return (
 
       <div>
-        websocket.close();
-      <h1>Interview</h1>
+          websocket.close();
+      {/* <h1>Interview</h1> */}
     </div>
   );
 };

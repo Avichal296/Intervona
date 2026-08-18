@@ -1,6 +1,5 @@
 import { Form } from './Form'
 import './App.css'
-import { useState } from 'react'
 import {Interview} from './interview'
 import {Result} from './result'
 import { BrowserRouter, Routes, Route } from "react-router-dom";
@@ -15,9 +14,9 @@ function App() {
     <>
     <BrowserRouter>
     <Routes>
-      <Route path = "/form:id" element={<Form/>} />
-      <Route path = "/Interview:id" element= {<Interview/>}/>
-      <Route path = "/Result:id" element={<Result/>}/>
+      <Route path = "/form" element={<Form/>} />
+      <Route path = "/Interview/:id" element= {<Interview/>}/>
+      <Route path = "/Result/:id" element={<Result/>}/>
 
 
      </Routes>
