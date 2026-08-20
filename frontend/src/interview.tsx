@@ -1,10 +1,12 @@
 import { useEffect } from "react";
+import {  useRef } from "react";
 
 export const Interview = () => {
   useEffect(() => {
     // IMPORTANT:
     // Yahan NEW API KEY use karna, jo abhi expose nahi hui hai.
     const API_KEY = "AQ.Ab8RN6KB1ztnSx1dr10qT6E_Wj6iTCjQSZYSLwn3ARc7WhZgdA";
+    const audioContextRef = useRef<AudioContext | null>(null);
 
     const MODEL_NAME = "gemini-3.1-flash-live-preview";
 
@@ -14,11 +16,53 @@ export const Interview = () => {
       `?key=${API_KEY}`;
 
     const websocket = new WebSocket(WS_URL);
-
+    function playPCM16(audioData: string) {
+      const audioContext = audioContextRef.current;
+    
+      if (!audioContext) return;
+    
+      const binary = atob(audioData);
+    
+      const bytes = new Uint8Array(binary.length);
+    
+      for (let i = 0; i < binary.length; i++) {
+        bytes[i] = binary.charCodeAt(i);
+      }
+    
+      const pcm16 = new Int16Array(
+        bytes.buffer
+      );
+    
+      const audioBuffer = audioContext.createBuffer(
+        1,
+        pcm16.length,
+        24000
+      );
+    
+      const channelData = audioBuffer.getChannelData(0);
+    
+      for (let i = 0; i < pcm16.length; i++) {
+        channelData[i] = pcm16[i] / 32768;
+      }
+    
+      const source = audioContext.createBufferSource();
+    
+      source.buffer = audioBuffer;
+    
+      source.connect(audioContext.destination);
+    
+      source.start();
+    }
+    playPCM16(audioData);
+    
     // 1. Connection open
     websocket.onopen = () => {
       console.log("WebSocket Connected ✅");
-
+      
+      
+      audioContextRef.current = new AudioContext({
+        sampleRate: 24000,
+      });
       // 2. Initial setup
       const setupMessage = {
         setup: {
@@ -57,7 +101,6 @@ export const Interview = () => {
     // 4. Receive everything from Gemini
     websocket.onmessage = async  (event) => {
         let data = event.data;
-
         // Browser mein message Blob aa sakta hai
         if (data instanceof Blob) {
           data = await data.text();
@@ -98,6 +141,27 @@ export const Interview = () => {
             "User:",
             serverContent.inputTranscription.text
           );
+          if (serverContent.modelTurn?.parts) {
+            for (const part of serverContent.modelTurn.parts) {
+              if (part.inlineData?.data) {
+                const audioData = part.inlineData.data;
+          
+                const binary = atob(audioData);
+          
+                const bytes = new Uint8Array(binary.length);
+          
+                for (let i = 0; i < binary.length; i++) {
+                  bytes[i] = binary.charCodeAt(i);
+                }
+          
+                const pcm16 = new Int16Array(
+                  bytes.buffer
+                );
+          
+                console.log("PCM samples:", pcm16.length);
+              }
+            }
+          }
         }
 
         // Gemini transcript
