@@ -53,7 +53,6 @@ export const Interview = () => {
     
       source.start();
     }
-    playPCM16(audioData);
     
     // 1. Connection open
     websocket.onopen = () => {
@@ -182,7 +181,10 @@ export const Interview = () => {
                 "AI audio received:",
                 audioData.length
               );
+              playPCM16(audioData);
             }
+
+
           }
         }
       }
