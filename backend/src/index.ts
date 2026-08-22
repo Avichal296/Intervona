@@ -42,5 +42,6 @@ app.post('/api/v1/interview', async (req: any ,res: any ) =>{
           error: error?.message,
           code: error?.code,
         })
-})
+    }
+});
 app.listen(3001);
