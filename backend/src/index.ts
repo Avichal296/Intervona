@@ -10,7 +10,8 @@ const app = express();
 app.use(express.json());
 app.use(cors());
 app.post('/api/v1/interview', async (req: any ,res: any ) =>{
-    const r =  ParseInterview.safeParse(req.body);
+    try{
+        const r =  ParseInterview.safeParse(req.body);
     
     if(!r.success){
         return  res.status(404).json({error: "Invalid Github Url"});
@@ -31,6 +32,15 @@ app.post('/api/v1/interview', async (req: any ,res: any ) =>{
      const result = await Github(GithubUsername);
      res.json( {
         id: interview.id
-     })
+     })} catch (error: any) {
+        console.error("PRISMA ERROR");
+        console.error("code:", error?.code);
+        console.error("message:", error?.message);
+        console.error("meta:", error?.meta);
+    
+        return res.status(500).json({
+          error: error?.message,
+          code: error?.code,
+        })
 })
 app.listen(3001);
