@@ -2,11 +2,11 @@ import { useEffect } from "react";
 import {  useRef } from "react";
 
 export const Interview = () => {
+  const audioContextRef = useRef<AudioContext | null>(null);
   useEffect(() => {
     // IMPORTANT:
     // Yahan NEW API KEY use karna, jo abhi expose nahi hui hai.
     const API_KEY = "AQ.Ab8RN6KB1ztnSx1dr10qT6E_Wj6iTCjQSZYSLwn3ARc7WhZgdA";
-    const audioContextRef = useRef<AudioContext | null>(null);
 
     const MODEL_NAME = "gemini-3.1-flash-live-preview";
 
