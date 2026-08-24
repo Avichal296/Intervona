@@ -85,7 +85,7 @@ export const Interview = () => {
           Rules:
           - Start the interview by introducing yourself first say ,I am an AI interviewer don't say Gemini and then asking to give intro to them and listen to their complete intro .
           - don't say tha you will be asking question from github Metadata .
-          - after 2min ask the next set of question.
+          
           - asking exactly ONE complete technical question.
           - Never ask incomplete questions like "principles?" or "other?".
           - Never output random fragments.
