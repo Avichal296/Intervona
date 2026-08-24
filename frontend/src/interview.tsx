@@ -3,6 +3,7 @@ import {  useRef } from "react";
 
 export const Interview = () => {
   const audioContextRef = useRef<AudioContext | null>(null);
+  const nextPlayTimeRef = useRef(0);
   useEffect(() => {
     // IMPORTANT:
     const API_KEY = "AQ.Ab8RN6KB1ztnSx1dr10qT6E_Wj6iTCjQSZYSLwn3ARc7WhZgdA";
@@ -28,9 +29,7 @@ export const Interview = () => {
         bytes[i] = binary.charCodeAt(i);
       }
     
-      const pcm16 = new Int16Array(
-        bytes.buffer
-      );
+      const pcm16 = new Int16Array(bytes.buffer);
     
       const audioBuffer = audioContext.createBuffer(
         1,
@@ -47,12 +46,19 @@ export const Interview = () => {
       const source = audioContext.createBufferSource();
     
       source.buffer = audioBuffer;
-    
       source.connect(audioContext.destination);
     
-      source.start();
-    }
+      // Queue this chunk after previous chunks
+      const startTime = Math.max(
+        audioContext.currentTime,
+        nextPlayTimeRef.current
+      );
     
+      source.start(startTime); // ✅ IMPORTANT
+    
+      nextPlayTimeRef.current =
+        startTime + audioBuffer.duration;
+    }
     // 1. Connection open
     websocket.onopen = () => {
       console.log("WebSocket Connected ✅");
@@ -73,12 +79,27 @@ export const Interview = () => {
           systemInstruction: {
             parts: [
               {
-                text: "You are a professional technical interviewer. Ask one question at a time.",
+                text: `
+          You are a professional technical interviewer conducting a structured software engineering interview.
+          
+          Rules:
+          - Start the interview by asking exactly ONE complete technical question.
+          - Never ask incomplete questions like "principles?" or "other?".
+          - Never output random fragments.
+          - Ask a clear question related to backend development.
+          - Wait for the candidate's answer before asking the next question.
+          - Ask follow-up questions based on the candidate's previous answer.
+          - Keep each question concise and specific.
+          - Do not explain the answer unless the candidate asks.
+          - Do not ask multiple questions at once.
+          - Speak naturally like a real interviewer.
+          
+          Your first question should be:
+          "Can you explain how you would design the backend architecture for a real-time AI interview application?"
+                `,
               },
             ],
           },
-        },
-      };
 
       websocket.send(JSON.stringify(setupMessage));
 
@@ -105,13 +126,18 @@ export const Interview = () => {
         }
     
         const response = JSON.parse(data);
-    
+        if (response.serverContent?.interrupted) {
+          console.log("Gemini interrupted");
+        
+          nextPlayTimeRef.current = audioContextRef.current?.currentTime ?? 0;
+        }
       console.log("Gemini response:", response);
       console.log("RAW GEMINI MESSAGE:", event.data);
 
       try {
         // const response = JSON.parse(event.data);
         console.log("PARSED GEMINI RESPONSE:", response);
+        
         if (response.setupComplete) {
             console.log("Gemini setup complete ✅");
       
