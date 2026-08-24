@@ -100,11 +100,14 @@ export const Interview = () => {
               },
             ],
           },
+        },
+      };
+        websocket.send(JSON.stringify(setupMessage));
+        console.log("Configuration sent ✅")
 
-      websocket.send(JSON.stringify(setupMessage));
-
-      console.log("Configuration sent ✅");
-
+        
+        
+å
       // 3. For now, test with TEXT only
     //   const textMessage = {
     //     realtimeInput: {
@@ -141,9 +144,14 @@ export const Interview = () => {
         if (response.setupComplete) {
             console.log("Gemini setup complete ✅");
       
+            // const textMessage = {
+            //   realtimeInput: {
+            //     text: "Start the interview and ask me the first backend question.",
+            //   },
+            // };
             const textMessage = {
               realtimeInput: {
-                text: "Start the interview and ask me the first backend question.",
+                text: "Begin the interview now.",
               },
             };
       
