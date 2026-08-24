@@ -4,6 +4,7 @@ import {  useRef } from "react";
 export const Interview = () => {
   const audioContextRef = useRef<AudioContext | null>(null);
   const nextPlayTimeRef = useRef(0);
+  const mediaStreamRef = useRef<MediaStream | null>(null);
   useEffect(() => {
     // IMPORTANT:
     const API_KEY = "AQ.Ab8RN6KB1ztnSx1dr10qT6E_Wj6iTCjQSZYSLwn3ARc7WhZgdA";
@@ -58,6 +59,70 @@ export const Interview = () => {
     
       nextPlayTimeRef.current =
         startTime + audioBuffer.duration;
+    }
+    async function startMicrophone() {
+      const stream = await navigator.mediaDevices.getUserMedia({
+        audio: true,
+      });
+    
+      mediaStreamRef.current = stream;
+    
+      console.log("Microphone connected ✅");
+    
+      const micContext = new AudioContext({
+        sampleRate: 16000,
+      });
+    
+      const source = micContext.createMediaStreamSource(stream);
+    
+      const processor = micContext.createScriptProcessor(
+        4096,
+        1,
+        1
+      );
+    
+      processor.onaudioprocess = (event) => {
+        if (websocket.readyState !== WebSocket.OPEN) return;
+    
+        const input = event.inputBuffer.getChannelData(0);
+    
+        const pcm16 = new Int16Array(input.length);
+    
+        for (let i = 0; i < input.length; i++) {
+          const sample = Math.max(-1, Math.min(1, input[i]));
+    
+          pcm16[i] =
+            sample < 0
+              ? sample * 0x8000
+              : sample * 0x7fff;
+        }
+    
+        const bytes = new Uint8Array(pcm16.buffer);
+    
+        let binary = "";
+    
+        for (let i = 0; i < bytes.length; i++) {
+          binary += String.fromCharCode(bytes[i]);
+        }
+    
+        const base64Audio = btoa(binary);
+    
+        websocket.send(
+          JSON.stringify({
+            realtimeInput: {
+              audio: {
+                data: base64Audio,
+                mimeType: "audio/pcm;rate=16000",
+              },
+            },
+          })
+        );
+      };
+    
+      source.connect(processor);
+      processor.connect(micContext.destination);
+    
+      console.log("Microphone streaming to Gemini ✅");
     }
     // 1. Connection open
     websocket.onopen = () => {
@@ -121,6 +186,7 @@ export const Interview = () => {
     //   websocket.send(JSON.stringify(textMessage));
 
     //   console.log("Text sent ✅");
+   
     };
 
     // 4. Receive everything from Gemini
@@ -160,8 +226,13 @@ export const Interview = () => {
       
             websocket.send(JSON.stringify(textMessage));
       
-            console.log("Text sent ✅");
+            console.log("Text sent ✅");  
+            console.log("Interview started ✅");
+
+            await startMicrophone();
+
           }
+         
       
       } catch (error) {
         console.error("Failed to parse:", error);
