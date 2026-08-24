@@ -83,7 +83,7 @@ export const Interview = () => {
           You are a professional technical interviewer conducting a structured software engineering interview.
           
           Rules:
-          - Start the interview by introducing yourself first and then asking to give intro to them and listen to their complete intro and then ask the next question after 2min
+          - Start the interview by introducing yourself first say ,I am an AI interviewer don't say Gemini and then asking to give intro to them and listen to their complete intro and then ask the next question after 2min
           - asking exactly ONE complete technical question.
           - Never ask incomplete questions like "principles?" or "other?".
           - Never output random fragments.
@@ -108,7 +108,7 @@ export const Interview = () => {
 
         
         
-å
+
       // 3. For now, test with TEXT only
     //   const textMessage = {
     //     realtimeInput: {
