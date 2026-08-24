@@ -146,12 +146,12 @@ export const Interview = () => {
       
             // const textMessage = {
             //   realtimeInput: {
-            //     text: "Start the interview and ask me the first backend question.",
+            //     text: "Start the interview and introduce yourself first and then ask him/her to give the introduce themselves",
             //   },
             // };
             const textMessage = {
               realtimeInput: {
-                text: "Begin the interview now.",
+                text: " tell about yourself first and then ask them to introduce themselves and then ask  the next question related to your github metadata",
               },
             };
       
