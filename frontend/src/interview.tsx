@@ -152,7 +152,7 @@ export const Interview = () => {
             // };
             const textMessage = {
               realtimeInput: {
-                text: " tell about yourself first and then ask them to introduce themselves and then ask  the next question related to your github metadata",
+                text: " tell about yourself first and then ask them to introduce themselves and then ask  the next question ",
               },
             };
       
