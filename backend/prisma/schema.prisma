@@ -25,7 +25,7 @@ model  Interview{
      id       String            @id @default(uuid())
      message  String
      type     Messagetype 
-     InterviewId  String        @unique
+     InterviewId  String        
      interview     Interview    @relation(fields: [InterviewId] ,references: [id])
   }
 
