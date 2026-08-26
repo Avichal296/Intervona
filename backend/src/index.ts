@@ -122,4 +122,40 @@ app.get("/api/v1/gemini-token", async (req, res) => {
       });
     }
   });
+  app.get("/api/v1/gemini-token", async (req, res) => {
+    try {
+      const expireTime = new Date(
+        Date.now() + 30 * 60 * 1000
+      ).toISOString();
+  
+      const token = await gemini.authTokens.create({
+        config: {
+          uses: 1,
+          expireTime,
+  
+          liveConnectConstraints: {
+            model: "gemini-3.1-flash-live-preview",
+  
+            config: {
+              sessionResumption: {},
+              responseModalities: [Modality.AUDIO],
+  
+              inputAudioTranscription: {},
+              outputAudioTranscription: {},
+            },
+          },
+        },
+      });
+  
+      return res.json({
+        token: token.name,
+      });
+    } catch (error) {
+      console.error("Gemini token error:", error);
+  
+      return res.status(500).json({
+        error: "Failed to create Gemini token",
+      });
+    }
+  });
 app.listen(3001);
