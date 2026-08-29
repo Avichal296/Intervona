@@ -158,4 +158,31 @@ app.get("/api/v1/gemini-token", async (req, res) => {
       });
     }
   });
+  app.post("/api/v1/conversation", async (req, res) => {
+    try {
+      const { interviewId, message, type } = req.body;
+  
+      if (!interviewId || !message || !type) {
+        return res.status(400).json({
+          error: "interviewId, message and type are required",
+        });
+      }
+  
+      const conversation = await prisma.conversation.create({
+        data: {
+          InterviewId: interviewId,
+          message,
+          type,
+        },
+      });
+  
+      return res.json(conversation);
+    } catch (error) {
+      console.error("Conversation save error:", error);
+  
+      return res.status(500).json({
+        error: "Failed to save conversation",
+      });
+    }
+  });
 app.listen(3001);
