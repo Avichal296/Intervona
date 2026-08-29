@@ -6,7 +6,7 @@ import axios from 'axios'
 interface Result {
     score: number,
     feedback: string,
-    transcript: {type: "Assistant" | "User" , content: string}[]
+    transcript: {type: "Assistant" | "User" , content: string , createdat : string}[]
 }
 export async function Result() {
     const {id } = useParams();
@@ -22,7 +22,7 @@ export async function Result() {
          })
         const time =  setInterval(()=>{
              axios.get(`${BackendUrl}/api/v1/result/${id}`)
-            .then(response =>{
+            .then(response  =>{
                setResult(response.data);
             },[5*1000])
 

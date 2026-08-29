@@ -1,7 +1,7 @@
 import { Form } from './Form'
 import './App.css'
 import {Interview} from './interview'
-import {Result} from './result'
+import {Result} from './Result'
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 
 
