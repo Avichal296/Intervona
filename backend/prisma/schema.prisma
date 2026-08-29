@@ -19,7 +19,7 @@ model  Interview{
   status            statusinterview
   score             Int          @default(0)
   conversation      Conversation[]       
-  
+  feedback           String?
  }
   model Conversation{
      id       String            @id @default(uuid())
