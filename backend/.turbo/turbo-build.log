@@ -2,26 +2,4 @@
 > backend@1.0.0 build
 > tsc
 
-[1G[0K[96mprisma.config.ts[0m:[93m11[0m:[93m3[0m - [91merror[0m[90m TS2375: [0mType '{ url: string | undefined; }' is not assignable to type '{ url?: string; shadowDatabaseUrl?: string; }' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties.
-  Types of property 'url' are incompatible.
-    Type 'string | undefined' is not assignable to type 'string'.
-      Type 'undefined' is not assignable to type 'string'.
-
-[7m11[0m   datasource: {
-[7m  [0m [91m  ~~~~~~~~~~[0m
-
-  [96m../../node_modules/@prisma/config/dist/index.d.ts[0m:[93m147[0m:[93m5[0m - The expected type comes from property 'datasource' which is declared here on type 'PrismaConfig'
-    [7m147[0m     datasource?: Simplify<Datasource>;
-    [7m   [0m [96m    ~~~~~~~~~~[0m
-
-
-Found 1 error in prisma.config.ts[90m:11[0m
-
-[1G[0K⠙[1G[0K[1mnpm[22m [31merror[39m Lifecycle script `build` failed with error:
-[1G[0K⠙[1G[0K[1mnpm[22m [31merror[39m [94mcode[39m [33m2[39m
-[1G[0K⠙[1G[0K[1mnpm[22m [31merror[39m [94mpath[39m /Users/hp/interview-mercor/intervona/apps/backend
-[1G[0K⠙[1G[0K[1mnpm[22m [31merror[39m [94mworkspace[39m backend@1.0.0
-[1G[0K⠙[1G[0K[1mnpm[22m [31merror[39m [94mlocation[39m /Users/hp/interview-mercor/intervona/apps/backend
-[1G[0K⠙[1G[0K[1mnpm[22m [31merror[39m command failed
-[1G[0K⠙[1G[0K[1mnpm[22m [31merror[39m [94mcommand[39m sh -c tsc
-[1G[0K⠙[1G[0K
+[1G[0K[1G[0K⠙[1G[0K
