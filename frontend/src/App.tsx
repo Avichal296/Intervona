@@ -1,39 +1,19 @@
-import { Form } from './Form'
-import './App.css'
-import {Interview} from './interview'
-import {Result} from '../Result'
-import { BrowserRouter, Routes, Route } from "react-router-dom";
-
-
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { Form } from "./Form";
+import { Interview } from "./interview";
+import { Result } from "./Result";
 
 function App() {
-//  const [page, setpage] = useState<'form' | 'Interview' | 'Result'> ('form');
-
-
   return (
-    <>
     <BrowserRouter>
-    <Routes>
-      <Route path = "/form" element={<Form/>} />
-      <Route path = "/Interview/:id" element= {<Interview/>}/>
-      <Route path = "/Result/:id" element={<Result/>}/>
-
-
-     </Routes>
-    
-    
-    
+      <Routes>
+        <Route path="/" element={<Form />} />
+        <Route path="/form" element={<Navigate to="/" replace />} />
+        <Route path="/interview/:id" element={<Interview />} />
+        <Route path="/result/:id" element={<Result />} />
+      </Routes>
     </BrowserRouter>
-     
-
-      {/* <div>
-        {page === 'form' && <Form />}
-        {page === 'Interview' && <Interview />}
-        {page === 'Result' && <Result />}
-      </div> */}
-      
-    </>
-  )
+  );
 }
 
 export default App;
