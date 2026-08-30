@@ -1,7 +1,7 @@
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { Form } from "./Form";
 import { Interview } from "./interview";
-import { Result } from "./Result";
+import { Result } from "./result";
 
 function App() {
   return (

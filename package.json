@@ -1,6 +1,8 @@
 {
   "name": "intervona",
   "private": true,
+  "packageManager": "npm@10.9.8",
+
   "scripts": {
     "build": "turbo run build",
     "dev": "turbo run dev",
@@ -18,12 +20,6 @@
   },
   "engines": {
     "node": ">=18"
-  },
-  "devEngines": {
-    "packageManager": {
-      "name": "npm",
-      "version": "10.9.8"
-    }
   },
   "workspaces": [
     "apps/*",
