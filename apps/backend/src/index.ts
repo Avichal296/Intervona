@@ -5,7 +5,6 @@ import { GoogleGenAI, Modality } from "@google/genai";
 import { Github } from "../scrapper/Github.js";
 import { ParseInterview } from "../type.js";
 import { prisma } from "../db.js";
-import app from "../src/index.js";
 
 const app = express();
 const apiKey = process.env.API_KEY;
