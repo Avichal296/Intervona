@@ -317,6 +317,10 @@ app.get("/api/v1/result/:id", async (req, res) => {
 
 const PORT = process.env.PORT ?? 3001;
 
-app.listen(PORT, () => {
-  console.log(`Backend running on http://localhost:${PORT}`);
-});
+export default app;
+
+if (process.env.NODE_ENV !== "production") {
+  app.listen(3001, () => {
+    console.log("Backend running on 3001");
+  });
+}
