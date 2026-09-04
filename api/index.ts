@@ -1,6 +1,5 @@
-const appPromise = import("../apps/backend/src/index.js");
-
-module.exports = async (req, res) => {
-  const { default: app } = await appPromise;
-  return app(req, res);
-};
+export default async function handler(req: any, res: any) {
+    const { default: app } = await import("../apps/backend/src/index.js");
+  
+    return app(req, res);
+  }
