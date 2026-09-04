@@ -2,22 +2,17 @@
 // npm install --save-dev prisma dotenv
 import "dotenv/config";
 import { defineConfig } from "prisma/config";
-const databaseUrl = process.env.DATABASE_URL;
 
-if (!databaseUrl) {
-  throw new Error("DATABASE_URL is not defined");
-}
+const databaseUrl =
+  process.env.DATABASE_URL ??
+  "postgresql://postgres:postgres@localhost:5432/postgres";
+
 export default defineConfig({
   schema: "prisma/schema.prisma",
   migrations: {
     path: "prisma/migrations",
   },
-  // datasource: {
-  //   url: process.env["DATABASE_URL"],
-  // },
   datasource: {
     url: databaseUrl,
   },
- 
-
 });

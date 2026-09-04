@@ -1,1 +1,2 @@
-export const BackendUrl = "http://localhost:3001";
+export const BackendUrl =
+  import.meta.env.VITE_BACKEND_URL?.replace(/\/$/, "") ?? "";

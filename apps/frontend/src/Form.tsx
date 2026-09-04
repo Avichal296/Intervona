@@ -1,6 +1,6 @@
 import { useState } from "react";
 import axios from "axios";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { Link2, Loader2, Sparkles } from "lucide-react";
 import { BackendUrl } from "./lib/config";
 
@@ -41,7 +41,9 @@ export function Form() {
           <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-2xl bg-amber-500 shadow-lg shadow-amber-500/20">
             <Sparkles className="h-8 w-8 text-stone-950" />
           </div>
-          <p className="text-xs font-medium uppercase tracking-widest text-amber-500/80">Intervona</p>
+          <p className="text-xs font-medium uppercase tracking-widest text-amber-500/80">
+            <Link to="/" className="hover:text-amber-400">Intervona</Link>
+          </p>
           <h1 className="mt-2 text-3xl font-bold tracking-tight">AI Interview</h1>
           <p className="mt-3 text-stone-500">Enter your GitHub URL to begin a voice-based technical interview</p>
         </div>

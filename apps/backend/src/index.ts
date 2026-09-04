@@ -9,17 +9,22 @@ import { prisma } from "../db.js";
 const app = express();
 const apiKey = process.env.API_KEY;
 
-if (!apiKey) {
-  throw new Error("API_KEY is not defined");
+const gemini = apiKey
+  ? new GoogleGenAI({
+      apiKey,
+      httpOptions: { apiVersion: "v1alpha" },
+    })
+  : null;
+
+function requireGemini() {
+  if (!gemini || !apiKey) {
+    throw new Error("API_KEY is not defined");
+  }
+  return gemini;
 }
 
-const gemini = new GoogleGenAI({
-  apiKey,
-  httpOptions: { apiVersion: "v1alpha" },
-});
-
 app.use(express.json());
-app.use(cors());
+app.use(cors({ origin: true }));
 
 app.post("/api/v1/interview", async (req, res) => {
   try {
@@ -63,9 +68,10 @@ const LIVE_MODEL = "gemini-3.1-flash-live-preview";
 
 app.get("/api/v1/gemini-token", async (_req, res) => {
   try {
+    const geminiClient = requireGemini();
     const expireTime = new Date(Date.now() + 30 * 60 * 1000).toISOString();
 
-    const token = await gemini.authTokens.create({
+    const token = await geminiClient.authTokens.create({
       config: {
         uses: 3,
         expireTime,
@@ -197,7 +203,7 @@ ${JSON.stringify(interview.githubMetaData)}
 Interview transcript:
 ${transcript || "No conversation recorded."}`;
 
-  const response = await gemini.models.generateContent({
+  const response = await requireGemini().models.generateContent({
     model: "gemini-3.6-flash",
     contents: prompt,
   });
@@ -315,12 +321,12 @@ app.get("/api/v1/result/:id", async (req, res) => {
   }
 });
 
-const PORT = process.env.PORT ?? 3001;
-
 export default app;
 
-if (process.env.NODE_ENV !== "production") {
-  app.listen(3001, () => {
-    console.log("Backend running on 3001");
+const PORT = Number(process.env.PORT ?? 3001);
+
+if (!process.env.VERCEL) {
+  app.listen(PORT, "0.0.0.0", () => {
+    console.log(`Backend running on http://localhost:${PORT}`);
   });
 }
