@@ -119,152 +119,256 @@ export const Interview = () => {
 
   async function ensureAudioContext() {
     let audioContext = audioContextRef.current;
+  
     if (!audioContext) {
-      audioContext = new AudioContext({ sampleRate: 24000 });
+      audioContext = new AudioContext({
+        sampleRate: 24000,
+      });
+  
       const gainNode = audioContext.createGain();
-      gainNode.gain.value = 1;
+  
+      gainNode.gain.value = 1.0;
+  
       gainNode.connect(audioContext.destination);
+  
       audioContextRef.current = audioContext;
       gainNodeRef.current = gainNode;
     }
-    if (audioContext.state === "suspended") await audioContext.resume();
+  
+    if (audioContext.state === "suspended") {
+      await audioContext.resume();
+    }
+  
     return audioContext;
   }
-
+  
   function stopAllAudio() {
-    scheduledSourcesRef.current.forEach((source) => {
-      try { source.stop(); } catch { /* already stopped */ }
-    });
+    for (const source of scheduledSourcesRef.current) {
+      try {
+        source.onended = null;
+        source.stop();
+        source.disconnect();
+      } catch {
+        // already stopped
+      }
+    }
+  
     scheduledSourcesRef.current = [];
+  
     const ctx = audioContextRef.current;
-    nextPlayTimeRef.current = ctx ? ctx.currentTime : 0;
+  
+    nextPlayTimeRef.current = ctx
+      ? ctx.currentTime
+      : 0;
+  
     aiSpeakingRef.current = false;
   }
-
-  const AUDIO_BUFFER_AHEAD = 0.12; // 120ms
-
-function playPCM16(audioData: string) {
-  const audioContext = audioContextRef.current;
-  const gainNode = gainNodeRef.current;
-
-  if (!audioContext || !gainNode) return;
-
-  const binary = atob(audioData);
-
-  if (binary.length < 2 || binary.length % 2 !== 0) {
-    console.warn("Invalid PCM16 audio chunk");
-    return;
-  }
-
-  const bytes = new Uint8Array(binary.length);
-
-  for (let i = 0; i < binary.length; i++) {
-    bytes[i] = binary.charCodeAt(i);
-  }
-
-  const pcm16 = new Int16Array(bytes.buffer);
-
-  const audioBuffer = audioContext.createBuffer(
-    1,
-    pcm16.length,
-    24000
-  );
-
-  const channelData = audioBuffer.getChannelData(0);
-
-  for (let i = 0; i < pcm16.length; i++) {
-    channelData[i] = pcm16[i] / 32768;
-  }
-
-  const source = audioContext.createBufferSource();
-  source.buffer = audioBuffer;
-  source.connect(gainNode);
-
-  const now = audioContext.currentTime;
-
-  // Keep a small buffer ahead of real time.
-  if (nextPlayTimeRef.current < now + AUDIO_BUFFER_AHEAD) {
-    nextPlayTimeRef.current = now + AUDIO_BUFFER_AHEAD;
-  }
-
-  const startTime = nextPlayTimeRef.current;
-
-  source.start(startTime);
-
-  nextPlayTimeRef.current =
-    startTime + audioBuffer.duration;
-
-  aiSpeakingRef.current = true;
-  setActiveSpeaker("ai");
-
-  scheduledSourcesRef.current.push(source);
-
-  source.onended = () => {
-    scheduledSourcesRef.current =
-      scheduledSourcesRef.current.filter(
-        (s) => s !== source
-      );
-
-    if (scheduledSourcesRef.current.length === 0) {
-      aiSpeakingRef.current = false;
-      setSpeaker("idle");
+  
+  function playPCM16(audioData: string) {
+    const audioContext = audioContextRef.current;
+    const gainNode = gainNodeRef.current;
+  
+    if (!audioContext || !gainNode) {
+      console.warn("Audio context not ready");
+      return;
     }
-  };
-}
-  async function saveConversation(message: string, type: "USER" | "ASSISTANT") {
-    if (!id) return;
-    await fetch(`${BackendUrl}/api/v1/conversation`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ interviewId: id, message, type }),
-    });
-  }
-
-  async function startMicrophone(session: { sendRealtimeInput: (input: object) => void }) {
-    const stream = await navigator.mediaDevices.getUserMedia({
-      audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true },
-    });
-    mediaStreamRef.current = stream;
-
-    const micContext = new AudioContext({ sampleRate: 16000 });
-    micContextRef.current = micContext;
-    if (micContext.state === "suspended") await micContext.resume();
-
-    const source = micContext.createMediaStreamSource(stream);
-    const processor = micContext.createScriptProcessor(4096, 1, 1);
-    processorRef.current = processor;
-
-    processor.onaudioprocess = (event) => {
-      if (!micActiveRef.current || aiSpeakingRef.current) return;
-
-      const input = event.inputBuffer.getChannelData(0);
-      const pcm16 = new Int16Array(input.length);
-      let hasSound = false;
-
-      for (let i = 0; i < input.length; i++) {
-        const sample = Math.max(-1, Math.min(1, input[i]));
-        if (Math.abs(sample) > 0.04) hasSound = true;
-        pcm16[i] = sample < 0 ? sample * 0x8000 : sample * 0x7fff;
+  
+    try {
+      const binary = atob(audioData);
+  
+      if (!binary || binary.length < 2 || binary.length % 2 !== 0) {
+        console.warn("Invalid PCM16 audio chunk");
+        return;
       }
+  
+      const bytes = new Uint8Array(binary.length);
+  
+      for (let i = 0; i < binary.length; i++) {
+        bytes[i] = binary.charCodeAt(i);
+      }
+  
+      const pcm16 = new Int16Array(bytes.buffer);
+  
+      const audioBuffer = audioContext.createBuffer(
+        1,
+        pcm16.length,
+        24000
+      );
+  
+      const channel = audioBuffer.getChannelData(0);
+  
+      for (let i = 0; i < pcm16.length; i++) {
+        channel[i] = pcm16[i] / 32768;
+      }
+  
+      const source = audioContext.createBufferSource();
+      source.buffer = audioBuffer;
+      source.connect(gainNode);
+  
+      const now = audioContext.currentTime;
+  
+      /*
+       * Keep chunks continuous.
+       * Never schedule in the past.
+       */
+      const BUFFER_AHEAD = 0.15;
 
-      if (hasSound) setActiveSpeaker("user");
-
+if (nextPlayTimeRef.current < now + BUFFER_AHEAD) {
+  nextPlayTimeRef.current = now + BUFFER_AHEAD;
+}
+  
+      const startTime = nextPlayTimeRef.current;
+  
+      source.start(startTime);
+  
+      nextPlayTimeRef.current =
+        startTime + audioBuffer.duration;
+  
+      scheduledSourcesRef.current.push(source);
+  
+      aiSpeakingRef.current = true;
+      setActiveSpeaker("ai");
+  
+      source.onended = () => {
+        scheduledSourcesRef.current =
+          scheduledSourcesRef.current.filter(
+            (item) => item !== source
+          );
+  
+        try {
+          source.disconnect();
+        } catch {
+          // already disconnected
+        }
+  
+        if (scheduledSourcesRef.current.length === 0) {
+          aiSpeakingRef.current = false;
+          setSpeaker("idle");
+  
+          const ctx = audioContextRef.current;
+  
+          if (ctx) {
+            nextPlayTimeRef.current = ctx.currentTime;
+          } else {
+            nextPlayTimeRef.current = 0;
+          }
+        }
+      };
+    } catch (error) {
+      console.error("PCM playback error:", error);
+    }
+  }
+  async function saveConversation(
+    message: string,
+    type: "USER" | "ASSISTANT"
+  ) {
+    if (!id) return;
+  
+    try {
+      const response = await fetch(
+        `${BackendUrl}/api/v1/conversation`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            interviewId: id,
+            message,
+            type,
+          }),
+        }
+      );
+  
+      if (!response.ok) {
+        console.error(
+          "Failed to save conversation:",
+          await response.text()
+        );
+      }
+    } catch (error) {
+      console.error("Save conversation error:", error);
+    }
+  }
+  async function startMicrophone(
+    session: {
+      sendRealtimeInput: (input: object) => void;
+    }
+  ) {
+    const stream = await navigator.mediaDevices.getUserMedia({
+      audio: {
+        echoCancellation: true,
+        noiseSuppression: true,
+        autoGainControl: true,
+        channelCount: 1,
+      },
+    });
+  
+    mediaStreamRef.current = stream;
+  
+    const micContext = new AudioContext({
+      sampleRate: 16000,
+    });
+  
+    micContextRef.current = micContext;
+  
+    if (micContext.state === "suspended") {
+      await micContext.resume();
+    }
+  
+    const source = micContext.createMediaStreamSource(stream);
+  
+    const processor = micContext.createScriptProcessor(
+      4096,
+      1,
+      1
+    );
+  
+    processorRef.current = processor;
+  
+    processor.onaudioprocess = (event) => {
+      if (!micActiveRef.current) return;
+  
+      const input = event.inputBuffer.getChannelData(0);
+  
+      const pcm16 = new Int16Array(input.length);
+  
+      for (let i = 0; i < input.length; i++) {
+        const sample = Math.max(
+          -1,
+          Math.min(1, input[i])
+        );
+  
+        pcm16[i] =
+          sample < 0
+            ? sample * 0x8000
+            : sample * 0x7fff;
+      }
+  
       const bytes = new Uint8Array(pcm16.buffer);
+  
       let binary = "";
-      for (let i = 0; i < bytes.length; i++) binary += String.fromCharCode(bytes[i]);
-
+  
+      for (let i = 0; i < bytes.length; i++) {
+        binary += String.fromCharCode(bytes[i]);
+      }
+  
       session.sendRealtimeInput({
-        audio: { data: btoa(binary), mimeType: "audio/pcm;rate=16000" },
+        audio: {
+          data: btoa(binary),
+          mimeType: "audio/pcm;rate=16000",
+        },
       });
     };
-
-    const gain = micContext.createGain();
-    gain.gain.value = 0;
+  
+    const silentGain = micContext.createGain();
+  
+    silentGain.gain.value = 0;
+  
     source.connect(processor);
-    processor.connect(gain);
-    gain.connect(micContext.destination);
+    processor.connect(silentGain);
+    silentGain.connect(micContext.destination);
   }
-
   function cleanupSession() {
     if (speakerTimeoutRef.current) clearTimeout(speakerTimeoutRef.current);
     stopAllAudio();
@@ -350,14 +454,52 @@ function playPCM16(audioData: string) {
         model: LIVE_MODEL,
         config: {
           responseModalities: [Modality.AUDIO],
+        
           inputAudioTranscription: {},
           outputAudioTranscription: {},
+        
+          realtimeInputConfig: {
+            automaticActivityDetection: {
+              // disabled: false,
+              disabled: true,
+        
+              // Don't interrupt while the candidate is taking a natural pause.
+              prefixPaddingMs: 300,
+        
+              // Wait longer before deciding that the candidate stopped speaking.
+              silenceDurationMs: 1200,
+            },
+          },
+        
           systemInstruction: {
-            parts: [{
-              text: `You are a professional technical interviewer. Speak clearly, one question at a time.
-Introduce yourself, ask candidate to introduce themselves, then ask technical questions based on GitHub profile.
-GitHub context: ${JSON.stringify(interview.githubMetaData)}`,
-            }],
+            parts: [
+              {
+                text: `You are a professional technical interviewer.
+          
+          Speak clearly and naturally at a moderate pace.
+          
+          IMPORTANT:
+          - Complete your current sentence before starting another.
+          - Do not cut sentences into fragments.
+          - Do not rush your speech.
+          - Ask only ONE question at a time.
+          - Keep questions concise.
+          - Pause naturally between sentences.
+          - Do not ask multiple questions in one response.
+          - After asking a question, wait for the candidate's answer.
+          
+          Interview flow:
+          1. Briefly introduce yourself.
+          2. Ask the candidate to introduce themselves.
+          3. Ask one technical question based on their GitHub profile.
+          4. Wait for the candidate's answer.
+          5. Ask one follow-up question when appropriate.
+          6. Continue one question at a time.
+          
+          GitHub context:
+          ${JSON.stringify(interview.githubMetaData)}`,
+              },
+            ],
           },
         },
         callbacks: {
@@ -368,36 +510,46 @@ GitHub context: ${JSON.stringify(interview.githubMetaData)}`,
             setSpeaker("idle");
           },
           onmessage: async (message) => {
-            if (connectionId !== connectionIdRef.current) return;
-          
-            const content = message.serverContent;
-          
-            // Gemini interrupted the current response.
-            // Stop all queued audio and DO NOT play audio from this message.
-            if (content?.interrupted) {
-              stopAllAudio();
+            if (connectionId !== connectionIdRef.current) {
               return;
             }
           
-            if (content?.inputTranscription?.text) {
+            const content = message.serverContent;
+          
+            if (!content) {
+              return;
+            }
+          
+            /*
+             * Gemini detected that the candidate started speaking
+             * while the model was generating audio.
+             *
+             * Do NOT manually stop audio here.
+             * Gemini's interruption event is informational.
+             */
+            if (content.interrupted) {
+              console.log("Gemini response interrupted");
+            }
+          
+            if (content.inputTranscription?.text) {
               setActiveSpeaker("user");
           
-              await saveConversation(
+              void saveConversation(
                 content.inputTranscription.text,
                 "USER"
               );
             }
           
-            if (content?.outputTranscription?.text) {
+            if (content.outputTranscription?.text) {
               setActiveSpeaker("ai");
           
-              await saveConversation(
+              void saveConversation(
                 content.outputTranscription.text,
                 "ASSISTANT"
               );
             }
           
-            if (content?.modelTurn?.parts) {
+            if (content.modelTurn?.parts) {
               for (const part of content.modelTurn.parts) {
                 if (part.inlineData?.data) {
                   playPCM16(part.inlineData.data);
