@@ -91,7 +91,7 @@ app.get("/api/v1/gemini-token", async (_req, res) => {
     return res.json({ token: token.name });
   } catch (error) {
     console.error("Gemini token error:", error);
-    return res.status(500).json({ error: "Failed to create Gemini token" });
+    return res.status(500).json({ error: error instanceof Error ? error.message : String(error), });
   }
 });
 
