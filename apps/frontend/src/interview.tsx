@@ -141,41 +141,76 @@ export const Interview = () => {
     aiSpeakingRef.current = false;
   }
 
-  function playPCM16(audioData: string) {
-    const audioContext = audioContextRef.current;
-    const gainNode = gainNodeRef.current;
-    if (!audioContext || !gainNode) return;
+  const AUDIO_BUFFER_AHEAD = 0.12; // 120ms
 
-    aiSpeakingRef.current = true;
-    setActiveSpeaker("ai");
+function playPCM16(audioData: string) {
+  const audioContext = audioContextRef.current;
+  const gainNode = gainNodeRef.current;
 
-    const binary = atob(audioData);
-    const bytes = new Uint8Array(binary.length);
-    for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+  if (!audioContext || !gainNode) return;
 
-    const pcm16 = new Int16Array(bytes.buffer);
-    const audioBuffer = audioContext.createBuffer(1, pcm16.length, 24000);
-    const channelData = audioBuffer.getChannelData(0);
-    for (let i = 0; i < pcm16.length; i++) channelData[i] = pcm16[i] / 32768;
+  const binary = atob(audioData);
 
-    const source = audioContext.createBufferSource();
-    source.buffer = audioBuffer;
-    source.connect(gainNode);
-
-    const startTime = Math.max(audioContext.currentTime, nextPlayTimeRef.current);
-    source.start(startTime);
-    nextPlayTimeRef.current = startTime + audioBuffer.duration;
-
-    scheduledSourcesRef.current.push(source);
-    source.onended = () => {
-      scheduledSourcesRef.current = scheduledSourcesRef.current.filter((s) => s !== source);
-      if (scheduledSourcesRef.current.length === 0) {
-        aiSpeakingRef.current = false;
-        setSpeaker("idle");
-      }
-    };
+  if (binary.length < 2 || binary.length % 2 !== 0) {
+    console.warn("Invalid PCM16 audio chunk");
+    return;
   }
 
+  const bytes = new Uint8Array(binary.length);
+
+  for (let i = 0; i < binary.length; i++) {
+    bytes[i] = binary.charCodeAt(i);
+  }
+
+  const pcm16 = new Int16Array(bytes.buffer);
+
+  const audioBuffer = audioContext.createBuffer(
+    1,
+    pcm16.length,
+    24000
+  );
+
+  const channelData = audioBuffer.getChannelData(0);
+
+  for (let i = 0; i < pcm16.length; i++) {
+    channelData[i] = pcm16[i] / 32768;
+  }
+
+  const source = audioContext.createBufferSource();
+  source.buffer = audioBuffer;
+  source.connect(gainNode);
+
+  const now = audioContext.currentTime;
+
+  // Keep a small buffer ahead of real time.
+  if (nextPlayTimeRef.current < now + AUDIO_BUFFER_AHEAD) {
+    nextPlayTimeRef.current = now + AUDIO_BUFFER_AHEAD;
+  }
+
+  const startTime = nextPlayTimeRef.current;
+
+  source.start(startTime);
+
+  nextPlayTimeRef.current =
+    startTime + audioBuffer.duration;
+
+  aiSpeakingRef.current = true;
+  setActiveSpeaker("ai");
+
+  scheduledSourcesRef.current.push(source);
+
+  source.onended = () => {
+    scheduledSourcesRef.current =
+      scheduledSourcesRef.current.filter(
+        (s) => s !== source
+      );
+
+    if (scheduledSourcesRef.current.length === 0) {
+      aiSpeakingRef.current = false;
+      setSpeaker("idle");
+    }
+  };
+}
   async function saveConversation(message: string, type: "USER" | "ASSISTANT") {
     if (!id) return;
     await fetch(`${BackendUrl}/api/v1/conversation`, {
@@ -334,23 +369,39 @@ GitHub context: ${JSON.stringify(interview.githubMetaData)}`,
           },
           onmessage: async (message) => {
             if (connectionId !== connectionIdRef.current) return;
+          
             const content = message.serverContent;
-
-            if (content?.interrupted) stopAllAudio();
-
+          
+            // Gemini interrupted the current response.
+            // Stop all queued audio and DO NOT play audio from this message.
+            if (content?.interrupted) {
+              stopAllAudio();
+              return;
+            }
+          
             if (content?.inputTranscription?.text) {
               setActiveSpeaker("user");
-              await saveConversation(content.inputTranscription.text, "USER");
+          
+              await saveConversation(
+                content.inputTranscription.text,
+                "USER"
+              );
             }
-
+          
             if (content?.outputTranscription?.text) {
               setActiveSpeaker("ai");
-              await saveConversation(content.outputTranscription.text, "ASSISTANT");
+          
+              await saveConversation(
+                content.outputTranscription.text,
+                "ASSISTANT"
+              );
             }
-
+          
             if (content?.modelTurn?.parts) {
               for (const part of content.modelTurn.parts) {
-                if (part.inlineData?.data) playPCM16(part.inlineData.data);
+                if (part.inlineData?.data) {
+                  playPCM16(part.inlineData.data);
+                }
               }
             }
           },
