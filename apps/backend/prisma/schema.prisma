@@ -14,20 +14,36 @@ datasource db {
 
 
 model  Interview{
-  id                String      @id @default(uuid())
+  id                String           @id @default(uuid())
   githubMetaData    Json
   status            statusinterview
-  score             Int          @default(0)
+  score             Int              @default(0)
   conversation      Conversation[]       
   feedback           String?
+  result            InterviewResult?
  }
   model Conversation{
-     id       String            @id @default(uuid())
-     message  String
-     type     Messagetype 
-     InterviewId  String        
-     interview     Interview    @relation(fields: [InterviewId] ,references: [id])
+     id             String        @id @default(uuid())
+     message        String
+     type           Messagetype 
+     InterviewId    String        
+     interview      Interview     @relation(fields: [InterviewId] ,references: [id])
   }
+  model InterviewResult {
+  id                 String      @id @default(uuid())
+  interviewId        String      @unique
+  summary            String
+  technicalScore     Int
+  communicationScore Int
+  efficiency         Int
+  recommendation     String
+  contextSummary     String
+  strengths          Json
+  improvements       Json
+  conversationDepth  String
+
+  interview          Interview  @relation(fields: [interviewId], references: [id])
+}
 
 enum  Messagetype{
      USER
@@ -38,8 +54,4 @@ enum statusinterview{
    PRE    
    PROGRESS
    POST 
- }
- model InterviewResult{
-
-  
  }
