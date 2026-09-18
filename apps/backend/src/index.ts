@@ -203,11 +203,34 @@ ${JSON.stringify(interview.githubMetaData)}
 Interview transcript:
 ${transcript || "No conversation recorded."}`;
 
-  const response = await requireGemini().models.generateContent({
-    model: "gemini-3.6-flash",
-    contents: prompt,
-  });
+async function generateWithRetry(
+  generateFn: () => Promise<any>,
+  retries = 3
+) {
+  for (let attempt = 1; attempt <= retries; attempt++) {
+    try {
+      return await generateFn();
+    } catch (error: any) {
+      const status = error?.status;
 
+      if (status !== 503 || attempt === retries) {
+        throw error;
+      }
+
+      console.log(`Gemini 503. Retrying... attempt ${attempt}`);
+
+      await new Promise((resolve) =>
+        setTimeout(resolve, attempt * 2000)
+      );
+    }
+  }
+}
+const response = await generateWithRetry(() =>
+  requireGemini().models.generateContent({
+    model: "your-model",
+    contents: prompt,
+  })
+);
   const text = response.text ?? "";
   const jsonMatch = text.match(/\{[\s\S]*\}/);
 
@@ -279,7 +302,7 @@ ${transcript || "No conversation recorded."}`;
   
 
 
-})
+})}
 
 app.post("/api/v1/interview/:id/complete", async (req, res) => {
   try {
