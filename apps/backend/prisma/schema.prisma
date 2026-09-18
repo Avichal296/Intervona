@@ -39,3 +39,7 @@ enum statusinterview{
    PROGRESS
    POST 
  }
+ model InterviewResult{
+
+  
+ }
