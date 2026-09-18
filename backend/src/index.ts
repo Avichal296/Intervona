@@ -15,7 +15,7 @@ if (!apiKey) {
 
 const gemini = new GoogleGenAI({
   apiKey,
-  httpOptions: { apiVersion: "v1alpha" },
+  // httpOptions: { apiVersion: "v1alpha" },
 });
 
 app.use(express.json());

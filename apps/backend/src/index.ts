@@ -12,7 +12,7 @@ const apiKey = process.env.API_KEY;
 const gemini = apiKey
   ? new GoogleGenAI({
       apiKey,
-      httpOptions: { apiVersion: "v1alpha" },
+      // httpOptions: { apiVersion: "v1alpha" },
     })
   : null;
 
@@ -65,7 +65,8 @@ app.post("/api/v1/interview", async (req, res) => {
 });
 
 const LIVE_MODEL = "gemini-3.1-flash-live-preview";
-
+// -const EVALUATION_MODEL = "gemini-2.5-flash";
+const EVALUATION_MODEL = "gemini-3.6-flash";
 app.get("/api/v1/gemini-token", async (_req, res) => {
   try {
     const geminiClient = requireGemini();
@@ -205,7 +206,7 @@ ${transcript || "No conversation recorded."}`;
 
 async function generateWithRetry(
   generateFn: () => Promise<any>,
-  retries = 3
+  retries = 4
 ) {
   for (let attempt = 1; attempt <= retries; attempt++) {
     try {
@@ -217,17 +218,23 @@ async function generateWithRetry(
         throw error;
       }
 
-      console.log(`Gemini 503. Retrying... attempt ${attempt}`);
+      const delay = 2000 * Math.pow(2, attempt - 1);
+
+      console.log(
+        `Gemini 503. Retrying in ${delay / 1000}s... attempt ${attempt}/${retries}`
+      );
 
       await new Promise((resolve) =>
-        setTimeout(resolve, attempt * 2000)
+        setTimeout(resolve, delay)
       );
     }
   }
+
+  throw new Error("Gemini request failed after retries");
 }
 const response = await generateWithRetry(() =>
   requireGemini().models.generateContent({
-    model: "your-model",
+    model: EVALUATION_MODEL,
     contents: prompt,
   })
 );
