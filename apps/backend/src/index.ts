@@ -242,20 +242,44 @@ ${transcript || "No conversation recorded."}`;
     conversationDepth: evaluation.conversationDepth ?? "",
   });
 
-  return prisma.interview.update({
-    where: { id: interviewId },
-    data: {
-      status: "POST",
-      score,
-      feedback: structuredFeedback,
-    },
-    include: {
-      conversation: {
-        orderBy: { id: "asc" },
+  return prisma.$transaction(async (tx)=>{
+    
+      const interview = await tx.interview.update({
+      where: {
+        id: interviewId,
       },
-    },
-  });
-}
+      data: {
+        status: "POST",
+        score: score,
+        feedback: structuredFeedback,
+      }
+    })
+    
+    const result = await tx.interviewResult.create({
+      
+      data:{
+        summary: structuredFeedback,
+        technicalScore: evaluation.technicalScore ?? score,
+        communicationScore: evaluation.communicationScore ?? score,
+        efficiency: evaluation.efficiency ?? score,
+        recommendation: evaluation.recommendation ?? "Review needed",
+        contextSummary: evaluation.contextSummary ?? "",
+        strengths: evaluation.strengths ?? [],
+        improvements: evaluation.improvements ?? [],
+        conversationDepth: evaluation.conversationDepth ?? "",
+        interviewId: interviewId,
+        
+      }
+    })
+     
+     return {
+      interview,
+      result
+     }
+  
+
+
+})
 
 app.post("/api/v1/interview/:id/complete", async (req, res) => {
   try {
