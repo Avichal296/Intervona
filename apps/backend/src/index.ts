@@ -5,7 +5,13 @@ import { GoogleGenAI, Modality } from "@google/genai";
 import { Github } from "../scrapper/Github.js";
 import { ParseInterview } from "../type.js";
 import { prisma } from "../db.js";
+import {createClient}  from "redis";
+ 
+const redis = createClient({
+  url: process.env.REDIS_URL!,
+})
 
+redis.connect();
 const app = express();
 const apiKey = process.env.API_KEY;
 
@@ -163,7 +169,7 @@ app.post("/api/v1/conversation", async (req, res) => {
   }
 });
 
-async function evaluateInterview(interviewId: string) {
+export async function evaluateInterview(interviewId: string) {
   const interview = await prisma.interview.findUnique({
     where: { id: interviewId },
     include: {
@@ -172,7 +178,7 @@ async function evaluateInterview(interviewId: string) {
       },
     },
   });
-
+    
   if (!interview) {
     throw new Error("Interview not found");
   }
@@ -313,8 +319,18 @@ const response = await generateWithRetry(() =>
 
 app.post("/api/v1/interview/:id/complete", async (req, res) => {
   try {
-    const interview = await evaluateInterview(req.params.id);
-    return res.json(interview);
+     
+    // const interview = await evaluateInterview(req.params.id);
+    // const cachedkey = await redis.get(`interview:${req.params.id}`);
+    // if(cachedkey){
+    //   return res.status(200).json(JSON.parse(cachedkey));
+    // }
+    const InterviewId = req.params.id;
+    const queue = await redis.lPush(`Interview_queue` , JSON.stringify({id: InterviewId}) )
+    return res.status(200).json({
+      message: "Interview evaluation job queued",
+      queue,
+    });
   } catch (error) {
     console.error("Interview complete error:", error);
     return res.status(500).json({ error: "Failed to complete interview" });
