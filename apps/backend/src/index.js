@@ -32,7 +32,7 @@ app.post("/api/v1/signup", async (req,res)=>{
             message: "User created successfully",
         })
     }
-    catch (error) {
+    catch (error) { 
         return res.status(500).json({
             error: error?.message ?? "failed to create user",
         })
