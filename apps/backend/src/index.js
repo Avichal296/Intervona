@@ -16,6 +16,28 @@ const gemini = new GoogleGenAI({
 });
 app.use(express.json());
 app.use(cors());
+
+app.post("/api/v1/signup", async (req,res)=>{
+    try {
+        const {email,password,name,} = req.body;
+        const user = await prisma.user.create({
+            data:{
+                id: crypto.randomUUID(),
+                email,
+                name,
+                password: hashpassword,
+            }
+        })
+        return res.status(201).json({user,
+            message: "User created successfully",
+        })
+    }
+    catch (error) {
+        return res.status(500).json({
+            error: error?.message ?? "failed to create user",
+        })
+    }
+});
 app.post("/api/v1/interview", async (req, res) => {
     try {
         const r = ParseInterview.safeParse(req.body);
