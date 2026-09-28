@@ -20,7 +20,7 @@ app.use(cors());
 app.post("/api/v1/signup", async (req,res)=>{
     try {
         const {email,password,name,} = req.body;
-        const user = await prisma.user.create({
+        const user = await prisma.user.create({    
             data:{
                 id: crypto.randomUUID(),
                 email,
