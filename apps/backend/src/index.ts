@@ -32,6 +32,11 @@ function requireGemini() {
 app.use(express.json());
 app.use(cors({ origin: true }));
 
+app.post("/api/v1/signup", async (req , res) =>{
+     const { name, password, email} = req.body;
+     
+})
+
 app.post("/api/v1/interview", async (req, res) => {
   try {
     const r = ParseInterview.safeParse(req.body);

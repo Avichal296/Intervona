@@ -1,8 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Get a free hosted Postgres database in seconds: `npx create-db`
-
 generator client {
   provider = "prisma-client"
   output   = "../src/generated/prisma"
@@ -12,30 +7,126 @@ datasource db {
   provider = "postgresql"
 }
 
+model User {
+  id       Int    @id @default(autoincrement())
+  name     String
+  email    String
+  password String
+}
 
-model  Interview{
-  id                String      @id @default(uuid())
-  githubMetaData    Json
-  status            statusinterview
-  score             Int          @default(0)
-  conversation      Conversation[]       
-  feedback           String?
- }
-  model Conversation{
-     id       String            @id @default(uuid())
-     message  String
-     type     Messagetype 
-     InterviewId  String        
-     interview     Interview    @relation(fields: [InterviewId] ,references: [id])
-  }
+model Interview {
+  id              String           @id @default(uuid())
+  githubMetaData  Json
+  status          statusinterview
+  score           Int              @default(0)
+  feedback        String?
+  conversation    Conversation[]
+  InterviewResult InterviewResult?
+}
 
-enum  Messagetype{
-     USER
-     ASSISTANT
-  }
+model Conversation {
+  id          String      @id @default(uuid())
+  message     String
+  type        Messagetype
+  InterviewId String
+  interview   Interview   @relation(fields: [InterviewId], references: [id])
+}
 
-enum statusinterview{
-   PRE    
-   PROGRESS
-   POST 
- }
+model Attempt {
+  id             String       @id @default(uuid())
+  learnerId      String
+  problemId      String
+  startedAt      DateTime     @default(now())
+  lastActivityAt DateTime     @default(now())
+  Learner        Learner      @relation(fields: [learnerId], references: [id])
+  Problem        Problem      @relation(fields: [problemId], references: [id])
+  Submission     Submission[]
+
+  @@index([learnerId, startedAt])
+  @@index([problemId])
+}
+
+model Evaluation {
+  id               String     @id @default(uuid())
+  submissionId     String     @unique
+  evaluatorKind    String
+  overallScore     Float
+  summary          String
+  strengths        Json
+  nextFocus        Json
+  criterionResults Json
+  startedAt        DateTime
+  completedAt      DateTime?
+  errorMessage     String?
+  Submission       Submission @relation(fields: [submissionId], references: [id])
+}
+
+model InterviewResult {
+  id                 String    @id @default(uuid())
+  interviewId        String    @unique
+  summary            String
+  technicalScore     Int
+  communicationScore Int
+  efficiency         Int
+  recommendation     String
+  contextSummary     String
+  strengths          Json
+  improvements       Json
+  conversationDepth  String
+  Interview          Interview @relation(fields: [interviewId], references: [id])
+}
+
+model Learner {
+  id          String    @id @default(uuid())
+  displayName String
+  createdAt   DateTime  @default(now())
+  Attempt     Attempt[]
+}
+
+model Problem {
+  id               String    @id @default(uuid())
+  slug             String    @unique
+  title            String
+  difficulty       String
+  estimatedMinutes Int
+  blurb            String
+  prompt           String
+  constraints      Json
+  functionalReqs   Json
+  changeScenarios  Json
+  designSignals    Json
+  createdAt        DateTime  @default(now())
+  Attempt          Attempt[]
+}
+
+model Submission {
+  id            String      @id @default(uuid())
+  attemptId     String
+  createdAt     DateTime    @default(now())
+  status        String
+  format        String
+  assumptions   String
+  classDesign   String
+  relationships String
+  tradeoffs     String
+  codeSketch    String      @default("")
+  diagramSource String      @default("")
+  contentHash   String
+  failReason    String?
+  Evaluation    Evaluation?
+  attempt       Attempt     @relation(fields: [attemptId], references: [id])
+
+  @@unique([attemptId, contentHash])
+  @@index([attemptId, createdAt])
+}
+
+enum Messagetype {
+  USER
+  ASSISTANT
+}
+
+enum statusinterview {
+  PRE
+  PROGRESS
+  POST
+}
