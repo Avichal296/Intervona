@@ -27,7 +27,10 @@ app.post("/api/v1/signup", async (req,res)=>{
     try {
         const {email,password,name,} = req.body;
         const hashedPassword = await bcrypt.hash(password,10);
-        
+        const token = jwt.sign({email},SECRET_KEY,{expiresIn: "30min"})
+        if(!token){
+            return res.status(500).json({ error: " Failed to create token "});
+        }
         const user = await prisma.uSER.create({    
             data:{
                 id: crypto.randomUUID(),
@@ -36,7 +39,7 @@ app.post("/api/v1/signup", async (req,res)=>{
                 password: password,
             }
         })
-        return res.status(201).json({user,
+        return res.status(201).json({user,token,
             message: "User created successfully",
         })
     }
