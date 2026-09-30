@@ -36,7 +36,7 @@ app.post("/api/v1/signup", async (req,res)=>{
                 id: crypto.randomUUID(),
                 email,
                 name,
-                password: password,
+                password: hashedPassword,
             }
         })
         return res.status(201).json({user,token,
