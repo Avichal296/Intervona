@@ -27,7 +27,7 @@ app.post("/api/v1/signup", async (req,res)=>{
     try {
         const {email,password,name,} = req.body;
         const hashedPassword = await bcrypt.hash(password,10);
-        const token = jwt.sign({email},SECRET_KEY,{expiresIn: "30min"})
+        const token = jwt.sign({email, id},SECRET_KEY,{expiresIn: "30m"})
         if(!token){
             return res.status(500).json({ error: " Failed to create token "});
         }
@@ -52,14 +52,6 @@ app.post("/api/v1/signup", async (req,res)=>{
 app.post("/api/v1/login", async (req, res) => {
     try{
         const {email,password} = req.body;
-        const validPassword = await bcrypt.compare(password,user.password);
-        if(!validPassword){
-            return res.status(401).json({error: "invalid credentials"});
-        }
-        const token = jwt.verify(token,SECRET_KEY);
-        if(!token){
-            return res.status(404).json({error: "token not found"});
-        }
         const user = await prisma.uSER.findUnique({
             where: {email}
            
@@ -68,6 +60,25 @@ app.post("/api/v1/login", async (req, res) => {
             return res.status(401).json({error: "invalid credentials"});
 
         }
+        const validPassword = await bcrypt.compare(password,user.password);
+        if(!validPassword){
+            return res.status(401).json({error: "invalid credentials"});
+        }
+        const token = jwt.sign({ userId : user.id,
+            email: user.email
+        },
+    SECRET_KEY,
+{
+    expiresIn: "30m"
+})
+        if(!token){
+            return res.status(401).json({error: "token generation failed "});
+        }
+        return res.status(200).json({
+            user,
+            token,
+            message: "login succesfull"
+        })
     }
     catch(error){} 
 }) 
