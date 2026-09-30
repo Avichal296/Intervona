@@ -5,6 +5,12 @@ import { GoogleGenAI, Modality } from "@google/genai";
 import { Github } from "../scrapper/Github.js";
 import { ParseInterview } from "../type.js";
 import { prisma } from "../db.js";
+import bcrypt from "bcrypt";
+import jwt from "jsonwebtoken";
+const SECRET_KEY = process.env.SECRET_KEY;
+if(!SECRET_KEY){
+    throw new Error("secret_key is not defined");
+}
 const app = express();
 const apiKey = process.env.API_KEY;
 if (!apiKey) {
@@ -20,12 +26,12 @@ app.use(cors());
 app.post("/api/v1/signup", async (req,res)=>{
     try {
         const {email,password,name,} = req.body;
-        const user = await prisma.user.create({    
+        const user = await prisma.uSER.create({    
             data:{
                 id: crypto.randomUUID(),
                 email,
                 name,
-                password: hashpassword,
+                password: password,
             }
         })
         return res.status(201).json({user,
@@ -38,6 +44,20 @@ app.post("/api/v1/signup", async (req,res)=>{
         })
     }
 });
+app.post("/api/v1/login", async (req, res) => {
+    try{
+        const {email,password} = req.body;
+        const user = await prisma.uSER.findUnique({
+            where: {email}
+           
+        })
+        if(!user){
+            return res.status(401).json({error: "invalid credentials"});
+
+        }
+    }
+    catch(error){} 
+}) 
 app.post("/api/v1/interview", async (req, res) => {
     try {
         const r = ParseInterview.safeParse(req.body);
