@@ -28,7 +28,7 @@ app.post("/api/v1/signup", async (req,res)=>{
         const {email,password,name,} = req.body;
         const hashedPassword = await bcrypt.hash(password,10);
         const id =  crypto.randomUUID();
-        const token = jwt.sign({email, userID:id},SECRET_KEY,{expiresIn: "30m"})
+        const token = jwt.sign({email, userId:id},SECRET_KEY,{expiresIn: "30m"})
         if(!token){
             return res.status(500).json({ error: " Failed to create token "});
         }
