@@ -52,6 +52,14 @@ app.post("/api/v1/signup", async (req,res)=>{
 app.post("/api/v1/login", async (req, res) => {
     try{
         const {email,password} = req.body;
+        const validPassword = await bcrypt.compare(password,user.password);
+        if(!validPassword){
+            return res.status(401).json({error: "invalid credentials"});
+        }
+        const token = jwt.verify(token,SECRET_KEY);
+        if(!token){
+            return res.status(404).json({error: "token not found"});
+        }
         const user = await prisma.uSER.findUnique({
             where: {email}
            
