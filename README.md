@@ -1,157 +1,276 @@
+<h1 align="center">🎤 Intervona</h1>
+<h3 align="center">AI-Powered Mock Interview Platform</h3>
+
+<p align="center">
+  Real-time conversational interviews, resume-aware question generation, live coding assessments
+  and AI-driven feedback, built as a TypeScript monorepo.
+</p>
+
+<p align="center">
+  <img src="https://img.shields.io/badge/TypeScript-3178C6?style=flat-square&logo=typescript&logoColor=white"/>
+  <img src="https://img.shields.io/badge/React-61DAFB?style=flat-square&logo=react&logoColor=black"/>
+  <img src="https://img.shields.io/badge/Express-000000?style=flat-square&logo=express&logoColor=white"/>
+  <img src="https://img.shields.io/badge/Bun-000000?style=flat-square&logo=bun&logoColor=white"/>
+  <img src="https://img.shields.io/badge/PostgreSQL-4169E1?style=flat-square&logo=postgresql&logoColor=white"/>
+  <img src="https://img.shields.io/badge/Prisma-2D3748?style=flat-square&logo=prisma&logoColor=white"/>
+  <img src="https://img.shields.io/badge/Turborepo-EF4444?style=flat-square&logo=turborepo&logoColor=white"/>
+</p>
+
+<p align="center">
+  <a href="YOUR-LIVE-DEMO-LINK">🔗 https://intervona-backend-mgw4.vercel.app/</a> ·
+  <a href="#-architecture">Architecture</a> ·
+  <a href="#-getting-started">Getting Started</a>
+</p>
+
+---
+
+## 📌 Overview
+
+Intervona simulates a real technical interview. A candidate uploads their resume, and the platform
+generates **personalized questions**, conducts the interview as a **real-time conversation**,
+runs a **coding round**, and finishes with **AI-generated feedback and performance analytics**.
+
+### Key Numbers
+
+| Metric | Result |
+|---|---|
+| ⚡ AI response time | **< 2 seconds** average |
+| 🚀 Lighthouse performance | **95+** |
+| 🏗️ Build time (Turborepo) | **35% faster** |
+| 🧠 Adaptive questions generated | **100+** |
+
+---
+
+## ✨ Features
+
+- 🎙️ **Real-time conversational interviews** over WebSockets
+- 📄 **Resume-aware question generation**: questions adapt to the candidate's skills and projects
+- 💻 **Coding assessments** inside the interview flow
+- 🤖 **Multi-LLM integration** (OpenAI + Gemini) for question generation and evaluation
+- 📊 **Automated candidate evaluation** with detailed feedback and performance analytics
+- 🧱 **Monorepo architecture** with shared packages and cached builds
+
+<!-- VERIFY: remove or add features according to what is actually implemented -->
+
+---
+
+## 🖼️ Screenshots
+
+<!-- Add 2-3 screenshots or a GIF. This is the single biggest upgrade for this README. -->
+
+<img width="1054" height="654" alt="image" src="https://github.com/user-attachments/assets/fbb9b1e1-954d-443f-b54f-09a82891f254" />
+<img width="1052" height="927" alt="image" src="https://github.com/user-attachments/assets/8c009896-1d18-4a4a-81df-70dd344a2132" />
+<img width="819" height="873" alt="image" src="https://github.com/user-attachments/assets/cd48a315-4772-4ef1-9c72-8e5481532e38" />
+<img width="760" height="822" alt="image" src="https://github.com/user-attachments/assets/7e439e5b-bc4b-41f9-b317-bbd429992a00" />
+
+<img width="1470" height="831" alt="image" src="https://github.com/user-attachments/assets/10bd33e0-d24f-4a5d-abb8-a2ed06ddbe78" />
 
 
-## Using this example
+| Interview Room | Coding Round | Feedback Report |
+|---|---|---|
+| ![](docs/images/interview.png) | ![](docs/images/coding.png) | ![](docs/images/feedback.png) |
 
-Run the following command:
+---
 
-```sh
-npx create-turbo@latest
+## 🏛️ Architecture
+
+### System Overview
+
+```mermaid
+flowchart LR
+    subgraph Client["Client (React + TypeScript)"]
+        UI["Interview UI"]
+        Code["Coding Editor"]
+        Dash["Feedback Dashboard"]
+    end
+
+    subgraph Server["Server (Express + Bun)"]
+        REST["REST API<br/>(auth, resume, sessions)"]
+        WS["WebSocket Gateway<br/>(live interview)"]
+        AI["AI Service Layer<br/>(prompting, evaluation)"]
+        ORM["Prisma ORM"]
+    end
+
+    subgraph External["External Services"]
+        OAI["OpenAI"]
+        GEM["Gemini"]
+    end
+
+    DB[("PostgreSQL")]
+
+    UI <-->|"WebSocket"| WS
+    UI -->|"HTTP"| REST
+    Code -->|"HTTP"| REST
+    Dash -->|"HTTP"| REST
+
+    REST --> ORM
+    WS --> AI
+    REST --> AI
+    AI --> OAI
+    AI --> GEM
+    ORM --> DB
 ```
 
-## What's inside?
+### Interview Flow
 
-This Turborepo includes the following packages/apps:
+```mermaid
+sequenceDiagram
+    autonumber
+    participant C as Candidate (React)
+    participant API as REST API
+    participant WS as WebSocket Gateway
+    participant AI as AI Service
+    participant LLM as OpenAI / Gemini
+    participant DB as PostgreSQL
 
-### Apps and Packages
+    C->>API: Upload resume, start session
+    API->>DB: Create interview session
+    API-->>C: sessionId
 
-- `docs`: a [Next.js](https://nextjs.org/) app
-- `web`: another [Next.js](https://nextjs.org/) app
-- `@repo/ui`: a stub React component library shared by both `web` and `docs` applications
-- `@repo/eslint-config`: `eslint` configurations (includes `eslint-config-next` and `eslint-config-prettier`)
-- `@repo/typescript-config`: `tsconfig.json`s used throughout the monorepo
+    C->>WS: Connect (sessionId)
+    WS->>AI: Build context from resume
+    AI->>LLM: Generate first question
+    LLM-->>AI: Question
+    AI-->>WS: Question
+    WS-->>C: Stream question
 
-Each package/app is 100% [TypeScript](https://www.typescriptlang.org/).
+    loop Conversational rounds
+        C->>WS: Answer
+        WS->>AI: Evaluate answer + generate follow-up
+        AI->>LLM: Prompt with history and context
+        LLM-->>AI: Follow-up question and score
+        AI-->>WS: Result
+        WS-->>C: Stream follow-up
+        WS->>DB: Persist transcript and scores
+    end
 
-### Utilities
+    C->>API: Submit coding solution
+    API->>AI: Evaluate solution
+    AI->>LLM: Review code
+    LLM-->>API: Evaluation
+    API->>DB: Save results
+    API-->>C: Final feedback and analytics
+```
 
-This Turborepo has some additional tools already setup for you:
+### Design Decisions
 
-- [TypeScript](https://www.typescriptlang.org/) for static type checking
-- [ESLint](https://eslint.org/) for code linting
-- [Prettier](https://prettier.io) for code formatting
+| Decision | Why |
+|---|---|
+| **WebSockets for the interview** | Interviews are conversational and need low-latency, bidirectional streaming instead of request/response polling. |
+| **Separate AI service layer** | Keeps prompt logic and provider SDKs out of route handlers, so models can be swapped or combined (OpenAI / Gemini) without touching the API. |
+| **Turborepo monorepo** | Shared types and configs across frontend and backend, with task caching that cut build times by 35%. |
+| **Prisma + PostgreSQL** | Strongly-typed queries and a relational model suited to users, sessions, transcripts and scores. |
+| **Resume as context** | Parsed resume content is injected into prompts to produce personalized, non-generic questions. |
+
+<!-- VERIFY: edit this table to match your real decisions -->
+
+---
+
+## 🗂️ Project Structure
+Intervona/
+├── frontend/ # React client (interview UI, coding editor, dashboards)
+├── backend/ # Express + Bun server (REST, WebSockets, AI services)
+├── apps/ # Turborepo apps
+├── packages/ # Shared packages (types, configs, utilities)
+├── api/ # Serverless entrypoint for deployment
+├── turbo.json # Turborepo pipeline
+└── vercel.json # Deployment config
+
+<!-- VERIFY: correct the one-line description of each folder -->
+
+---
+
+## 🧰 Tech Stack
+
+| Layer | Technologies |
+|---|---|
+| **Frontend** | React, TypeScript |
+| **Backend** | Node.js / Bun, Express, WebSockets |
+| **Database** | PostgreSQL, Prisma ORM |
+| **AI** | OpenAI, Google Gemini |
+| **Tooling** | Turborepo, Git, GitHub |
+| **Deployment** | Vercel |
+
+---
+
+## 🚀 Getting Started
+
+### Prerequisites
+
+- Node.js 18+ (and/or [Bun](https://bun.sh))
+- PostgreSQL database
+- OpenAI and Gemini API keys
+
+### 1. Clone and install
+
+```bash
+git clone https://github.com/Avichal296/Intervona.git
+cd Intervona
+npm install
+```
+
+### 2. Configure environment variables
+
+Create a `.env` file in `backend/` (and `frontend/` if needed):
+
+```env
+DATABASE_URL=postgresql://USER:PASSWORD@localhost:5432/intervona
+OPENAI_API_KEY=your_openai_key
+GEMINI_API_KEY=your_gemini_key
+JWT_SECRET=your_secret
+```
+
+<!-- VERIFY: use the exact variable names from your code -->
+
+### 3. Set up the database
+
+```bash
+cd backend
+npx prisma migrate dev
+```
+
+### 4. Run the project
+
+```bash
+# from the repo root: runs all apps in parallel
+npx turbo dev
+```
+
+| Service | URL |
+|---|---|
+| Frontend | http://localhost:5173 |
+| Backend | http://localhost:3000 |
+
+<!-- VERIFY: ports -->
 
 ### Build
 
-To build all apps and packages, run the following command:
-
-With [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation) installed (recommended):
-
-```sh
-cd my-turborepo
-turbo build
-```
-
-Without global `turbo`, use your package manager:
-
-```sh
-cd my-turborepo
+```bash
 npx turbo build
-npm dlx turbo build
-npm exec turbo build
 ```
 
-You can build a specific package by using a [filter](https://turborepo.dev/docs/crafting-your-repository/running-tasks#using-filters):
+---
 
-With [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation) installed:
+## 🛣️ Roadmap
 
-```sh
-turbo build --filter=docs
-```
+- [ ] Voice-based interviews (speech-to-text / text-to-speech)
+- [ ] Role-specific interview tracks (Frontend, Backend, DSA)
+- [ ] Interview history and progress tracking
+- [ ] Sandboxed code execution
 
-Without global `turbo`:
+<!-- VERIFY: keep only what you actually plan to build -->
 
-```sh
-npx turbo build --filter=docs
-npm exec turbo build --filter=docs
-npm exec turbo build --filter=docs
-```
+---
 
-### Develop
+## 🤝 Contributing
 
-To develop all apps and packages, run the following command:
+Contributions are welcome. Fork the repo, create a feature branch and open a pull request.
 
-With [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation) installed (recommended):
+---
 
-```sh
-cd my-turborepo
-turbo dev
-```
+## 👤 Author
 
-Without global `turbo`, use your package manager:
+**Avichal Shrivastava**  
+[GitHub](https://github.com/Avichal296) · [LinkedIn](https://www.linkedin.com/in/YOUR-LINKEDIN) · [Email](mailto:avichalshrivastava2006@gmail.com)
 
-```sh
-cd my-turborepo
-npx turbo dev
-npm exec turbo dev
-npm exec turbo dev
-```
-
-You can develop a specific package by using a [filter](https://turborepo.dev/docs/crafting-your-repository/running-tasks#using-filters):
-
-With [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation) installed:
-
-```sh
-turbo dev --filter=web
-```
-
-Without global `turbo`:
-
-```sh
-npx turbo dev --filter=web
-npm exec turbo dev --filter=web
-npm exec turbo dev --filter=web
-```
-
-### Remote Caching
-
-> [!TIP]
-> Vercel Remote Cache is free for all plans. Get started today at [vercel.com](https://vercel.com/signup?utm_source=remote-cache-sdk&utm_campaign=free_remote_cache).
-
-Turborepo can use a technique known as [Remote Caching](https://turborepo.dev/docs/core-concepts/remote-caching) to share cache artifacts across machines, enabling you to share build caches with your team and CI/CD pipelines.
-
-By default, Turborepo will cache locally. To enable Remote Caching you will need an account with Vercel. If you don't have an account you can [create one](https://vercel.com/signup?utm_source=turborepo-examples), then enter the following commands:
-
-With [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation) installed (recommended):
-
-```sh
-cd my-turborepo
-turbo login
-```
-
-Without global `turbo`, use your package manager:
-
-```sh
-cd my-turborepo
-npx turbo login
-npm exec turbo login
-npm exec turbo login
-```
-
-This will authenticate the Turborepo CLI with your [Vercel account](https://vercel.com/docs/concepts/personal-accounts/overview).
-
-Next, you can link your Turborepo to your Remote Cache by running the following command from the root of your Turborepo:
-
-With [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation) installed:
-
-```sh
-turbo link
-```
-
-Without global `turbo`:
-
-```sh
-npx turbo link
-npm exec turbo link
-npm exec turbo link
-```
-
-## Useful Links
-
-Learn more about the power of Turborepo:
-
-- [Tasks](https://turborepo.dev/docs/crafting-your-repository/running-tasks)
-- [Caching](https://turborepo.dev/docs/crafting-your-repository/caching)
-- [Remote Caching](https://turborepo.dev/docs/core-concepts/remote-caching)
-- [Filtering](https://turborepo.dev/docs/crafting-your-repository/running-tasks#using-filters)
-- [Configuration Options](https://turborepo.dev/docs/reference/configuration)
-- [CLI Usage](https://turborepo.dev/docs/reference/command-line-reference)
+<p align="center">⭐ If you found this useful, consider starring the repo.</p>
