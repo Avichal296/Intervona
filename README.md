@@ -1,5 +1,5 @@
 <h1 align="center">🎤 Intervona</h1>
-<h3 align="center">AI-Powered Mock Interview Platform</h3>
+<h3 align="center">AI-Powered  Interview Platform</h3>
 
 <p align="center">
   Real-time conversational interviews, resume-aware question generation, live coding assessments
