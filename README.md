@@ -2,7 +2,7 @@
 <h3 align="center">AI-Powered  Interview Platform</h3>
 
 <p align="center">
-  Real-time conversational interviews, resume-aware question generation, live coding assessments
+  Real-time conversational interviews, resume aware question generation, live coding assessments
   and AI-driven feedback, built as a TypeScript monorepo.
 </p>
 
